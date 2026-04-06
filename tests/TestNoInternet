@@ -1,0 +1,51 @@
+import unittest
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+
+class TestNoInternet(unittest.TestCase):
+
+    def setUp(self):
+        self.driver = webdriver.Chrome()
+        self.driver.maximize_window()
+        self.wait = WebDriverWait(self.driver, 10)
+        self.driver.get("https://www.greencity.cx.ua/#/greenCity/events")
+
+    def test_no_internet_behavior(self):
+        driver = self.driver
+        wait = self.wait
+
+        wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+
+        driver.execute_cdp_cmd(
+            "Network.enable", {}
+        )
+        driver.execute_cdp_cmd(
+            "Network.emulateNetworkConditions",
+            {
+                "offline": True,
+                "latency": 0,
+                "downloadThroughput": 0,
+                "uploadThroughput": 0,
+            },
+        )
+
+        driver.refresh()
+
+        page_text = driver.find_element(By.TAG_NAME, "body").text
+
+        self.assertTrue(
+            "інтернет" in page_text.lower()
+            or "internet" in page_text.lower()
+            or "ERR_INTERNET_DISCONNECTED" in driver.page_source,
+            "Сайт не показує повідомлення про відсутність інтернету"
+        )
+
+    def tearDown(self):
+        self.driver.quit()
+
+
+if __name__ == "__main__":
+    unittest.main()
